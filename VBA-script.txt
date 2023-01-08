@@ -1,0 +1,185 @@
+Sub Stocks()
+' Define i to loop through the data set
+Dim i As Integer
+' Define LRow to store the upper bound limit of the For Loop function
+Dim LRow As Integer
+' Define TotalVolume to track the cumulative volume for each ticker
+Dim TotalVolume As Double
+' Define OpenArray to store the opening price for each ticker
+Dim OpenArray() As Double
+' Define CloseArray to store the closing price for each ticker
+Dim CloseArray() As Double
+' Define Count to define size and position of entries inside
+' previously created arrays
+Dim count As Integer
+' Define SummaryRowCount to position the entries in the summary table
+Dim SummaryRowCount As Integer
+' Define ws variable for looping through worksheets
+Dim ws As Worksheet
+
+'---------------------------------------------------------------------
+
+For Each ws In Worksheets
+
+    ' Calculate the number of rows for Column 1
+    LRow = ws.Cells(Rows.count, 1).End(xlUp).Row
+    
+    ' Define Column titles for Summary Table
+    ws.Range("I1").Value = "Ticker"
+    ws.Range("J1").Value = "Yearly Change"
+    ws.Range("K1").Value = "Percent Change"
+    ws.Range("L1").Value = "Total Stock Volume"
+    
+    ' Define Titles for Grand Summary Table
+    ws.Range("O2").Value = "Greatest % Increase"
+    ws.Range("O3").Value = "Greatest % Decrease"
+    ws.Range("O4").Value = "Greatest Total Volume"
+    ws.Range("P1").Value = "Ticker"
+    ws.Range("Q1").Value = "Value"
+    
+    'Set initial values for the FOR LOOP process
+    TotalVolume = 0
+    SummaryRowCount = 2
+    count = 0
+    
+    ' Loop through the data set to fill up the summary table
+    For i = 0 To LRow
+    
+        ' 1st condition will build the summary table by finding the
+        ' unique tickers in the <ticker> column
+        If ws.Cells(i + 2, 1).Value <> ws.Cells(i + 3, 1).Value Then
+            
+            ' Save each unique ticker in Column I
+            ws.Cells(SummaryRowCount, 9).Value = ws.Cells(i + 2, 1).Value
+            
+            ' Add last volume data point for each unique ticker
+            ' to TotalVolume variable
+            TotalVolume = TotalVolume + ws.Cells(i + 2, 7)
+            
+            ' Store TotalVolume variable for each unique ticker in
+            ' Column L
+            ws.Cells(SummaryRowCount, 12).Value = TotalVolume
+            
+            ' Store last data point in OpenArray and CloseArray sets
+            OpenArray(count - 1) = ws.Cells(i + 2, 3)
+            CloseArray(count - 1) = ws.Cells(i + 2, 6)
+            
+            ' Calculate Yearly Change and store data points for each
+            ' ticker in Column J
+            ws.Cells(SummaryRowCount, 10) = OpenArray(0) - CloseArray(UBound(CloseArray))
+            
+            ' Calculate Percentage Change and store data points for each
+            ' ticker in Column K
+            ws.Cells(SummaryRowCount, 11) = (OpenArray(0) - CloseArray(UBound(CloseArray))) / OpenArray(0)
+            
+            ' Reset count to resize and start re-filling the arrays
+            count = 0
+            
+            ' Increase SummaryRowCount in 1 to store the next data
+            ' point in the Summary Table
+            SummaryRowCount = SummaryRowCount + 1
+            
+            ' Reset VolumeTotal for next arrays
+            VolumeTotal = 0
+            
+        ' 2nd condition will store data for each ticker array. This
+        ' information will be used in the 1st condition to populate
+        ' the summary table
+        Else
+            
+            ' Redefine OpenArray and CloseArray while preserving the
+            ' previous data points
+            ReDim Preserve OpenArray(count)
+            ReDim Preserve CloseArray(count)
+            
+            ' Storing data points in OpenArray and CloseArray
+            OpenArray(count) = ws.Cells(i + 2, 3)
+            CloseArray(count) = ws.Cells(i + 2, 6)
+            
+            ' Cummulative Total Volume
+            TotalVolume = TotalVolume + ws.Cells(i + 2, 7)
+            
+            ' Increase count in 1 to store the next data point for each
+            ' array set
+            count = count + 1
+            
+        End If
+        
+    Next i
+    
+    '---------------------------------------------------------------------
+    
+    ' Define variables for grand summary table
+    
+    Dim maxPercentChange As Double
+    Dim lowPercentChange As Double
+    Dim maxTotalVolume As Double
+    
+    ' Calculate the number of rows for Column 9
+    LRow = ws.Cells(Rows.count, 9).End(xlUp).Row
+    
+    ' Set intial values as 0
+    maxPercentChange = 0
+    lowPercentChange = 0
+    maxTotalVolume = 0
+    
+    ' Loop through Summary Table. maxPercentChange, minPercentChange, and
+    ' maxTotalVolume variables will be updated on each step of the loop
+    ' process. Associated ticker of these metrics are presented in the
+    ' Grand Summary Table.
+    For i = 0 To LRow
+        If ws.Cells(i + 2, 11).Value > maxPercentChange Then
+            maxPercentChange = ws.Cells(i + 2, 11).Value
+            ws.Range("Q2").Value = maxPercentChange
+            ws.Range("P2").Value = ws.Cells(i + 2, 9).Value
+        End If
+    Next i
+    
+    For i = 0 To LRow
+        If ws.Cells(i + 2, 11).Value < lowPercentChange Then
+            lowPercentChange = ws.Cells(i + 2, 11).Value
+            ws.Range("Q3").Value = lowPercentChange
+            ws.Range("P3").Value = ws.Cells(i + 2, 9).Value
+        End If
+    Next i
+    
+    For i = 0 To LRow
+        If ws.Cells(i + 2, 12).Value > maxTotalVolume Then
+            maxTotalVolume = ws.Cells(i + 2, 12).Value
+            ws.Range("Q4").Value = maxTotalVolume
+            ws.Range("P4").Value = ws.Cells(i + 2, 9)
+        End If
+    Next i
+    
+    '---------------------------------------------------------------------
+    
+    ' Formating the Summary Table and Grand Summary Table
+    
+    ' Autofit tables columns
+    ws.Columns("I:L").AutoFit
+    ws.Columns("O:Q").AutoFit
+    
+    ' Format Percent Change numbers to percentage
+    ws.Range("K1:K" & LRow).NumberFormat = "0.00%"
+    ws.Range("Q2:Q3").NumberFormat = "0.00%"
+    
+    ' Conditional formatting for Yearly Change and Percent Change
+    For i = 0 To LRow
+        If ws.Cells(i + 2, 10).Value >= 0 Then
+            ws.Cells(i + 2, 10).Interior.ColorIndex = 4
+        Else
+            ws.Cells(i + 2, 10).Interior.ColorIndex = 3
+        End If
+    Next i
+    
+    For i = 0 To LRow
+        If ws.Cells(i + 2, 11).Value >= 0 Then
+            ws.Cells(i + 2, 11).Interior.ColorIndex = 4
+        Else
+            ws.Cells(i + 2, 11).Interior.ColorIndex = 3
+        End If
+    Next i
+
+Next
+
+End Sub
