@@ -1,6 +1,6 @@
 # VBA-challenge
 
-I have uploaded the following for grading:
+I have uploaded the following files for grading:
 - VBA script
 - Screenshots of results for different years (2018, 2019, 2020)
 - Excel Macro-Enabled file I used for testing
